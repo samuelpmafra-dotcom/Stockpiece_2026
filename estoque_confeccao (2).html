@@ -1,0 +1,1298 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>StockPiece — Gestão de Confecção</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jsbarcode/3.11.5/JsBarcode.all.min.js"></script>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@300;400;500;600&display=swap');
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
+:root{
+  --bg:#F4F2ED;--surface:#FDFCFA;--s2:#ECEAE4;--border:#D5D1C8;--border2:#C2BDB2;
+  --text:#1A1916;--t2:#6A6760;--t3:#9A9790;
+  --green:#2D5016;--gbg:#E8F0DC;
+  --red:#7A1F1F;--rbg:#F5E8E8;
+  --blue:#1A3A5C;--bbg:#E2ECF5;
+  --amber:#6B4A00;--abg:#FAF0DC;
+  --r:6px;--rl:10px;
+  --mono:'IBM Plex Mono',monospace;--sans:'IBM Plex Sans',sans-serif;
+}
+body{font-family:var(--sans);background:var(--bg);color:var(--text);min-height:100vh;font-size:14px;}
+.layout{display:flex;min-height:100vh;}
+.sidebar{width:220px;background:var(--text);display:flex;flex-direction:column;flex-shrink:0;position:fixed;top:0;left:0;bottom:0;z-index:100;overflow-y:auto;}
+.sidebar-logo{padding:22px 20px 18px;border-bottom:1px solid rgba(255,255,255,.1);}
+.sidebar-logo .name{font-family:var(--mono);font-size:13px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;color:#fff;}
+.sidebar-logo .sub{font-size:11px;color:rgba(255,255,255,.35);margin-top:2px;font-family:var(--mono);}
+.nav-group{padding:14px 12px 6px;}
+.nav-label{font-size:10px;font-weight:600;letter-spacing:.12em;text-transform:uppercase;color:rgba(255,255,255,.3);padding:0 8px;margin-bottom:5px;font-family:var(--mono);}
+.nav-item{display:flex;align-items:center;gap:10px;padding:9px 10px;border-radius:var(--r);cursor:pointer;font-size:13px;color:rgba(255,255,255,.6);transition:all .15s;border:none;background:none;width:100%;text-align:left;font-family:var(--sans);}
+.nav-item:hover{background:rgba(255,255,255,.08);color:#fff;}
+.nav-item.active{background:rgba(255,255,255,.15);color:#fff;font-weight:500;}
+.main{margin-left:220px;padding:26px 30px;flex:1;}
+.page{display:none;}.page.active{display:block;}
+.page-title{font-family:var(--mono);font-size:17px;font-weight:600;margin-bottom:3px;}
+.page-sub{font-size:13px;color:var(--t2);margin-bottom:22px;}
+.card{background:var(--surface);border:1px solid var(--border);border-radius:var(--rl);padding:18px;margin-bottom:14px;}
+.card-title{font-family:var(--mono);font-size:11px;font-weight:600;letter-spacing:.1em;text-transform:uppercase;color:var(--t2);margin-bottom:13px;}
+.g2{display:grid;grid-template-columns:1fr 1fr;gap:16px;}
+.g3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:14px;}
+.g4{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;}
+label{display:block;font-size:11px;font-weight:600;color:var(--t2);margin-bottom:4px;font-family:var(--mono);letter-spacing:.03em;}
+input,select,textarea{width:100%;height:36px;padding:0 11px;border:1px solid var(--border);border-radius:var(--r);background:var(--surface);color:var(--text);font-size:13px;font-family:var(--sans);outline:none;transition:border .12s;}
+input:focus,select:focus,textarea:focus{border-color:var(--text);}
+input[readonly]{background:var(--s2);color:var(--t2);}
+textarea{height:64px;padding:9px 11px;resize:vertical;}
+.fr{display:grid;gap:11px;margin-bottom:11px;}
+.c2{grid-template-columns:1fr 1fr;}
+.c3{grid-template-columns:1fr 1fr 1fr;}
+.c4{grid-template-columns:1fr 1fr 1fr 1fr;}
+.field{display:flex;flex-direction:column;}
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:6px;height:36px;padding:0 15px;border-radius:var(--r);font-size:13px;font-weight:500;cursor:pointer;border:1px solid var(--border);background:var(--surface);color:var(--text);font-family:var(--sans);transition:all .12s;white-space:nowrap;}
+.btn:hover{background:var(--s2);}
+.bp{background:var(--text);color:#fff;border-color:var(--text);}.bp:hover{background:#333;}
+.bs{background:var(--gbg);color:var(--green);border-color:#b8d898;}.bs:hover{background:#d8ebb8;}
+.bd{background:var(--rbg);color:var(--red);border-color:#ddb0b0;}.bd:hover{background:#ecc8c8;}
+.bw{background:var(--abg);color:var(--amber);border-color:#e8cc88;}
+.btn-sm{height:28px;padding:0 9px;font-size:12px;}
+.btn-full{width:100%;}
+.br{display:flex;gap:8px;margin-top:12px;align-items:center;}
+.badge{display:inline-flex;align-items:center;padding:2px 8px;border-radius:20px;font-size:11px;font-weight:600;font-family:var(--mono);}
+.bg-green{background:var(--gbg);color:var(--green);}
+.bg-red{background:var(--rbg);color:var(--red);}
+.bg-blue{background:var(--bbg);color:var(--blue);}
+.bg-amber{background:var(--abg);color:var(--amber);}
+.bg-gray{background:var(--s2);color:var(--t2);}
+.mc{background:var(--surface);border:1px solid var(--border);border-radius:var(--rl);padding:15px;}
+.mlabel{font-size:10px;font-weight:600;font-family:var(--mono);letter-spacing:.08em;text-transform:uppercase;color:var(--t2);margin-bottom:5px;}
+.mval{font-size:26px;font-weight:600;font-family:var(--mono);line-height:1;}
+.msub{font-size:11px;color:var(--t3);margin-top:3px;}
+table{width:100%;border-collapse:collapse;font-size:13px;}
+thead th{text-align:left;padding:7px 11px;font-family:var(--mono);font-size:10px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;color:var(--t2);border-bottom:1px solid var(--border);background:var(--s2);}
+tbody td{padding:9px 11px;border-bottom:1px solid var(--border);}
+tbody tr:last-child td{border-bottom:none;}
+tbody tr:hover td{background:var(--s2);}
+.tw{overflow-x:auto;}
+.code{font-family:var(--mono);font-size:12px;}
+.barcode-box{display:flex;flex-direction:column;align-items:center;gap:6px;padding:14px;border:1px dashed var(--border2);border-radius:var(--rl);background:#fff;}
+.barcode-box svg{max-width:100%;}
+.ilist{display:flex;flex-direction:column;gap:3px;max-height:220px;overflow-y:auto;margin-top:8px;}
+.irow{display:flex;align-items:center;justify-content:space-between;padding:8px 11px;background:var(--s2);border-radius:var(--r);font-size:13px;}
+.stag{font-family:var(--mono);font-size:12px;font-weight:600;}
+.qpill{background:var(--bbg);color:var(--blue);font-family:var(--mono);font-size:11px;font-weight:600;padding:2px 8px;border-radius:20px;}
+.qpill-r{background:var(--rbg);color:var(--red);font-family:var(--mono);font-size:11px;font-weight:600;padding:2px 8px;border-radius:20px;}
+.empty{text-align:center;padding:28px;color:var(--t3);font-size:13px;}
+.divider{height:1px;background:var(--border);margin:13px 0;}
+.scan{font-family:var(--mono)!important;font-size:13px!important;font-weight:600!important;}
+.fb{display:flex;gap:10px;align-items:flex-end;flex-wrap:wrap;margin-bottom:14px;}
+#toast{position:fixed;bottom:22px;right:22px;background:var(--text);color:#fff;padding:11px 16px;border-radius:var(--rl);font-size:13px;font-family:var(--mono);opacity:0;pointer-events:none;transition:opacity .2s;z-index:9999;max-width:340px;}
+#toast.show{opacity:1;}
+.t-ok{background:var(--green)!important;}
+.t-err{background:var(--red)!important;}
+.t-warn{background:var(--amber)!important;}
+.mo{display:none;position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:500;align-items:center;justify-content:center;}
+.mo.open{display:flex;}
+.md{background:var(--surface);border-radius:var(--rl);border:1px solid var(--border);padding:22px;width:600px;max-width:96vw;max-height:92vh;overflow-y:auto;}
+.mh{display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;}
+.mt{font-family:var(--mono);font-size:15px;font-weight:600;}
+.mx{background:none;border:none;cursor:pointer;font-size:22px;color:var(--t2);line-height:1;padding:0;}
+/* SKU display grande */
+.sku-display{
+  font-family:var(--mono);font-size:22px;font-weight:600;letter-spacing:.04em;
+  padding:14px 16px;background:var(--text);color:#fff;
+  border-radius:var(--r);text-align:center;margin-bottom:10px;
+  min-height:52px;display:flex;align-items:center;justify-content:center;
+}
+.sku-parts{display:flex;gap:6px;justify-content:center;flex-wrap:wrap;margin-bottom:10px;}
+.sku-part{padding:4px 10px;border-radius:20px;font-size:11px;font-family:var(--mono);font-weight:600;}
+/* Grade */
+.grade-wrap{display:flex;flex-direction:column;gap:6px;}
+.grade-row{display:grid;grid-template-columns:60px 80px;gap:8px;align-items:center;}
+.grade-row label{font-size:12px;margin:0;font-family:var(--mono);font-weight:600;}
+.grade-row input{height:32px;text-align:center;font-family:var(--mono);font-weight:600;font-size:13px;}
+/* Produto no lote */
+.lote-prod-card{background:var(--s2);border:1px solid var(--border);border-radius:var(--r);padding:12px;margin-bottom:8px;}
+.lote-prod-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;}
+.lote-prod-name{font-family:var(--mono);font-size:13px;font-weight:600;}
+/* status pill */
+.spill{padding:6px 12px;border-radius:var(--r);font-size:12px;font-family:var(--mono);margin-top:6px;}
+.spill-ok{background:var(--gbg);border:1px solid #b8d898;color:var(--green);}
+.spill-err{background:var(--rbg);border:1px solid #ddb0b0;color:var(--red);}
+.spill-warn{background:var(--abg);border:1px solid #e8cc88;color:var(--amber);}
+/* produto grid */
+.pgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:9px;}
+.pcard{background:var(--surface);border:1px solid var(--border);border-radius:var(--rl);padding:13px;cursor:pointer;transition:border-color .12s;}
+.pcard:hover{border-color:var(--text);}
+.pcode2{font-family:var(--mono);font-size:10px;color:var(--t2);margin-bottom:3px;}
+.pname2{font-size:13px;font-weight:500;margin-bottom:6px;}
+/* Lote número badge */
+.lote-num{font-family:var(--mono);font-size:28px;font-weight:600;color:var(--blue);}
+.lote-num-label{font-size:11px;font-family:var(--mono);color:var(--t2);margin-top:2px;}
+/* print */
+@media print{body *{visibility:hidden;}#print-area,#print-area *{visibility:visible;}#print-area{position:fixed;top:0;left:0;width:100%;}}
+.etiq{width:58mm;border:1px solid #ccc;padding:3mm 2mm;display:inline-flex;flex-direction:column;align-items:center;background:#fff;margin:1mm;page-break-inside:avoid;font-family:'IBM Plex Mono',monospace;}
+.etiq .en{font-size:9pt;font-weight:600;text-align:center;margin-bottom:1mm;}
+.etiq .es{font-size:7pt;color:#555;margin-bottom:1mm;}
+.etiq .ec{font-size:7pt;margin-top:1mm;letter-spacing:.02em;}
+</style>
+</head>
+<body>
+<div id="toast"></div>
+<div id="print-area" style="display:none"></div>
+
+<!-- modal etiqueta -->
+<div class="mo" id="mo-etiq">
+  <div class="md" style="width:660px">
+    <div class="mh"><span class="mt" id="mo-etiq-title">Etiquetas</span><button class="mx" onclick="closeM('mo-etiq')">×</button></div>
+    <div id="mo-etiq-body"></div>
+    <div class="br" style="justify-content:center;margin-top:14px">
+      <button class="btn bp" onclick="doPrint()">🖨 Imprimir</button>
+      <button class="btn" onclick="closeM('mo-etiq')">Fechar</button>
+    </div>
+  </div>
+</div>
+<!-- modal produto detalhe -->
+<div class="mo" id="mo-prod">
+  <div class="md">
+    <div class="mh"><span class="mt" id="mo-prod-title"></span><button class="mx" onclick="closeM('mo-prod')">×</button></div>
+    <div id="mo-prod-body"></div>
+  </div>
+</div>
+<!-- modal lote detalhe -->
+<div class="mo" id="mo-lote">
+  <div class="md" style="width:700px">
+    <div class="mh"><span class="mt" id="mo-lote-title"></span><button class="mx" onclick="closeM('mo-lote')">×</button></div>
+    <div id="mo-lote-body"></div>
+  </div>
+</div>
+
+<div class="layout">
+<nav class="sidebar">
+  <div class="sidebar-logo">
+    <div class="name">StockPiece</div>
+    <div class="sub">Gestão de Confecção</div>
+  </div>
+  <div class="nav-group">
+    <div class="nav-label">Cadastros</div>
+    <button class="nav-item active" onclick="go('produtos',this)"><span>🏷</span>Produtos</button>
+    <button class="nav-item" onclick="go('boxes',this)"><span>📦</span>Boxes</button>
+  </div>
+  <div class="nav-group">
+    <div class="nav-label">Lotes</div>
+    <button class="nav-item" onclick="go('lotes',this)"><span>🗃</span>Criar Lote</button>
+    <button class="nav-item" onclick="go('lotes-list',this)"><span>📋</span>Meus Lotes</button>
+  </div>
+  <div class="nav-group">
+    <div class="nav-label">Movimentação</div>
+    <button class="nav-item" onclick="go('entrada',this)"><span>⬇</span>Entrada</button>
+    <button class="nav-item" onclick="go('saida',this)"><span>⬆</span>Saída</button>
+  </div>
+  <div class="nav-group">
+    <div class="nav-label">Análise</div>
+    <button class="nav-item" onclick="go('relatorio',this)"><span>📊</span>Relatório</button>
+    <button class="nav-item" onclick="go('estoque',this)"><span>🗂</span>Estoque</button>
+  </div>
+</nav>
+<main class="main">
+
+<!-- ===== PRODUTOS ===== -->
+<div id="page-produtos" class="page active">
+  <div class="page-title">Cadastro de Produtos</div>
+  <div class="page-sub">O código é gerado automaticamente com referência + categoria + cor.</div>
+  <div class="g2" style="align-items:start">
+    <div class="card">
+      <div class="card-title">Novo Produto</div>
+
+      <!-- SKU gerado em destaque -->
+      <div class="sku-display" id="p-sku-display">—</div>
+      <div class="sku-parts" id="p-sku-parts"></div>
+
+      <div class="fr c2">
+        <div class="field">
+          <label>Referência (4 dígitos)</label>
+          <input id="p-ref" maxlength="4" placeholder="0001" class="scan" oninput="this.value=this.value.replace(/\D/g,'').slice(0,4);buildSKU()"/>
+        </div>
+        <div class="field">
+          <label>Nome do produto</label>
+          <input id="p-nome" placeholder="Camisa Preta Lisa"/>
+        </div>
+      </div>
+      <div class="fr c2">
+        <div class="field">
+          <label>Categoria</label>
+          <select id="p-cat" onchange="buildSKU()">
+            <option value="">Selecione</option>
+            <option value="CAM">Camisa</option>
+            <option value="CAL">Calça</option>
+            <option value="VES">Vestido</option>
+            <option value="BER">Bermuda</option>
+            <option value="BLU">Blusa</option>
+            <option value="SAI">Saia</option>
+            <option value="JAQ">Jaqueta</option>
+            <option value="OUT">Outro</option>
+          </select>
+        </div>
+        <div class="field">
+          <label>Cor</label>
+          <input id="p-cor" placeholder="Preto" oninput="autoAbrCor()"/>
+        </div>
+      </div>
+      <div class="fr c2">
+        <div class="field">
+          <label>Abrev. cor (3 letras)</label>
+          <input id="p-cor-cod" maxlength="3" placeholder="PTO" class="scan" oninput="this.value=this.value.toUpperCase().replace(/[^A-Z]/g,'');buildSKU()"/>
+        </div>
+        <div class="field">
+          <label>Fornecedor</label>
+          <input id="p-forn" placeholder="Nome do fornecedor"/>
+        </div>
+      </div>
+      <div class="fr c2">
+        <div class="field">
+          <label>Preço de custo (R$)</label>
+          <input id="p-preco" type="number" placeholder="0,00"/>
+        </div>
+        <div class="field">
+          <label>Observações</label>
+          <input id="p-obs" placeholder="Detalhes adicionais..."/>
+        </div>
+      </div>
+      <div class="br">
+        <button class="btn bp btn-full" onclick="salvarProduto()">Salvar produto</button>
+      </div>
+    </div>
+    <div>
+      <div class="card">
+        <div class="card-title">Preview código de barras</div>
+        <div class="barcode-box" id="p-bc-box">
+          <div class="empty" style="padding:16px 0">Preencha os campos</div>
+        </div>
+      </div>
+      <div class="card">
+        <div class="card-title">Produtos — <span id="p-count">0</span></div>
+        <div id="p-grid" class="pgrid"><div class="empty" style="grid-column:1/-1">Nenhum produto</div></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ===== BOXES ===== -->
+<div id="page-boxes" class="page">
+  <div class="page-title">Cadastro de Boxes</div>
+  <div class="page-sub">Registre os boxes de armazenagem e gere etiquetas.</div>
+  <div class="g2" style="align-items:start">
+    <div class="card">
+      <div class="card-title">Novo Box</div>
+      <div class="fr c2">
+        <div class="field"><label>Código</label><input id="b-cod" placeholder="BOX-001" class="scan" oninput="this.value=this.value.toUpperCase();prevBoxBC()"/></div>
+        <div class="field"><label>Descrição / Local</label><input id="b-desc" placeholder="Prateleira A"/></div>
+      </div>
+      <div class="fr c2">
+        <div class="field"><label>Setor</label>
+          <select id="b-setor"><option value="">—</option><option>Armazém A</option><option>Armazém B</option><option>Expedição</option><option>Recebimento</option><option>Quarentena</option></select>
+        </div>
+        <div class="field"><label>Capacidade (peças)</label><input id="b-cap" type="number" placeholder="50"/></div>
+      </div>
+      <div class="br"><button class="btn bp btn-full" onclick="salvarBox()">Salvar Box</button></div>
+    </div>
+    <div>
+      <div class="card">
+        <div class="card-title">Preview</div>
+        <div class="barcode-box" id="b-bc-box"><div class="empty" style="padding:16px 0">Preencha o código</div></div>
+      </div>
+      <div class="card">
+        <div class="card-title">Boxes — <span id="b-count">0</span></div>
+        <div class="tw"><table><thead><tr><th>Código</th><th>Descrição</th><th>Setor</th><th></th></tr></thead>
+        <tbody id="b-tbody"><tr><td colspan="4" class="empty">Nenhum box</td></tr></tbody></table></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ===== CRIAR LOTE ===== -->
+<div id="page-lotes" class="page">
+  <div class="page-title">Criar Lote</div>
+  <div class="page-sub">Um lote pode conter vários produtos, cada um com sua grade de tamanhos.</div>
+  <div class="g2" style="align-items:start">
+
+    <!-- Coluna esquerda: configuração -->
+    <div>
+      <!-- Número do lote -->
+      <div class="card">
+        <div class="card-title">Identificação do lote</div>
+        <div style="display:flex;align-items:center;gap:20px;margin-bottom:14px">
+          <div>
+            <div class="lote-num" id="l-num-display">L001</div>
+            <div class="lote-num-label">Número do lote</div>
+          </div>
+          <div style="flex:1">
+            <div class="fr c2" style="margin-bottom:0">
+              <div class="field"><label>Data de produção</label><input type="date" id="l-data"/></div>
+              <div class="field"><label>Observação</label><input id="l-obs" placeholder="ex: coleção verão 25"/></div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Adicionar produtos ao lote -->
+      <div class="card">
+        <div class="card-title">Produtos neste lote</div>
+        <div style="display:flex;gap:8px;margin-bottom:10px">
+          <select id="l-prod-sel" style="flex:1">
+            <option value="">Selecione um produto para adicionar...</option>
+          </select>
+          <button class="btn bp" onclick="adicionarProdLote()">+ Adicionar</button>
+        </div>
+        <div id="l-prods-wrap">
+          <div class="empty" id="l-empty-prod">Nenhum produto adicionado ao lote</div>
+        </div>
+      </div>
+
+      <div id="l-total-wrap" style="display:none" class="card">
+        <div class="card-title">Resumo do lote</div>
+        <div id="l-resumo"></div>
+      </div>
+
+      <div class="br">
+        <button class="btn bp btn-full" id="btn-gerar" style="display:none" onclick="gerarLote()">Gerar lote + códigos únicos</button>
+      </div>
+    </div>
+
+    <!-- Coluna direita: resultado -->
+    <div id="l-result-wrap" style="display:none">
+      <div class="card">
+        <div class="card-title">Lote <span id="l-res-id"></span> gerado — <span id="l-res-total"></span> peças</div>
+        <div id="l-res-body"></div>
+        <div class="br" style="margin-top:14px">
+          <button class="btn bp" onclick="imprimirTodoLote()">🖨 Imprimir todas as etiquetas</button>
+          <button class="btn bs" onclick="darEntradaLote()">⬇ Dar entrada no estoque</button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ===== LOTES LIST ===== -->
+<div id="page-lotes-list" class="page">
+  <div class="page-title">Meus Lotes</div>
+  <div class="page-sub">Todos os lotes criados com seus produtos e status de estoque.</div>
+  <div id="lotes-grid" class="g3"><div class="empty" style="grid-column:1/-1">Nenhum lote</div></div>
+</div>
+
+<!-- ===== ENTRADA ===== -->
+<div id="page-entrada" class="page">
+  <div class="page-title">Entrada de Estoque</div>
+  <div class="page-sub">Bipe o código único de cada peça. O sistema identifica produto, tamanho e lote.</div>
+  <div class="g2" style="align-items:start">
+    <div>
+      <div class="card">
+        <div class="card-title">Bipe as peças</div>
+        <div style="display:flex;gap:8px">
+          <input id="inp-e" class="scan" placeholder="Bipe o código..." style="flex:1" onkeydown="if(event.key==='Enter')bipE()"/>
+          <button class="btn bp" onclick="bipE()">+</button>
+        </div>
+        <div id="e-info" style="margin-top:5px"></div>
+        <div class="ilist" id="lista-e"><div class="empty">Aguardando...</div></div>
+        <div style="margin-top:7px;font-size:12px;font-family:var(--mono);color:var(--t2)">Total: <strong id="e-tot">0</strong></div>
+      </div>
+      <div class="card">
+        <div class="card-title">Box de destino (opcional)</div>
+        <div style="display:flex;gap:8px">
+          <input id="inp-box-e" class="scan" placeholder="Bipe o box..." style="flex:1" onkeydown="if(event.key==='Enter')setBoxE()"/>
+          <button class="btn" onclick="setBoxE()">OK</button>
+        </div>
+        <div id="box-e-prev" style="margin-top:5px"></div>
+      </div>
+      <div class="br">
+        <button class="btn bs btn-full" onclick="confEntrada()">✓ Confirmar entrada</button>
+        <button class="btn bd" onclick="limpE()">Limpar</button>
+      </div>
+    </div>
+    <div class="card">
+      <div class="card-title">Últimas entradas hoje</div>
+      <div class="tw"><table><thead><tr><th>Hora</th><th>Código</th><th>SKU</th><th>Box</th></tr></thead>
+      <tbody id="ult-e"><tr><td colspan="4" class="empty">—</td></tr></tbody></table></div>
+    </div>
+  </div>
+</div>
+
+<!-- ===== SAÍDA ===== -->
+<div id="page-saida" class="page">
+  <div class="page-title">Saída de Estoque</div>
+  <div class="page-sub">Saldo insuficiente bloqueia a saída automaticamente.</div>
+  <div class="g2" style="align-items:start">
+    <div>
+      <div class="card">
+        <div class="card-title">Bipe as peças</div>
+        <div style="display:flex;gap:8px">
+          <input id="inp-s" class="scan" placeholder="Bipe o código..." style="flex:1" onkeydown="if(event.key==='Enter')bipS()"/>
+          <button class="btn bp" onclick="bipS()">+</button>
+        </div>
+        <div id="s-info" style="margin-top:5px"></div>
+        <div class="ilist" id="lista-s"><div class="empty">Aguardando...</div></div>
+        <div style="margin-top:7px;font-size:12px;font-family:var(--mono);color:var(--t2)">
+          OK: <strong id="s-ok">0</strong> &nbsp;|&nbsp; Bloqueadas: <strong id="s-bloq" style="color:var(--red)">0</strong>
+        </div>
+      </div>
+      <div class="card">
+        <div class="card-title">Box de origem (opcional)</div>
+        <div style="display:flex;gap:8px">
+          <input id="inp-box-s" class="scan" placeholder="Bipe o box..." style="flex:1" onkeydown="if(event.key==='Enter')setBoxS()"/>
+          <button class="btn" onclick="setBoxS()">OK</button>
+        </div>
+        <div id="box-s-prev" style="margin-top:5px"></div>
+      </div>
+      <div class="br">
+        <button class="btn bd btn-full" onclick="confSaida()">✓ Confirmar saída</button>
+        <button class="btn" onclick="limpS()">Limpar</button>
+      </div>
+    </div>
+    <div class="card">
+      <div class="card-title">Últimas saídas hoje</div>
+      <div class="tw"><table><thead><tr><th>Hora</th><th>Código</th><th>SKU</th><th>Box</th></tr></thead>
+      <tbody id="ult-s"><tr><td colspan="4" class="empty">—</td></tr></tbody></table></div>
+    </div>
+  </div>
+</div>
+
+<!-- ===== RELATÓRIO ===== -->
+<div id="page-relatorio" class="page">
+  <div class="page-title">Relatório de Movimentos</div>
+  <div class="page-sub">Filtre por data, tipo, SKU ou box e exporte CSV.</div>
+  <div class="g4" style="margin-bottom:18px">
+    <div class="mc"><div class="mlabel">Movimentos</div><div class="mval" id="r-tot">0</div><div class="msub" id="r-per">—</div></div>
+    <div class="mc"><div class="mlabel">Peças entradas</div><div class="mval" id="r-ent">0</div></div>
+    <div class="mc"><div class="mlabel">Peças saídas</div><div class="mval" id="r-sai">0</div></div>
+    <div class="mc"><div class="mlabel">Saldo período</div><div class="mval" id="r-sal">0</div></div>
+  </div>
+  <div class="card">
+    <div class="card-title">Filtros</div>
+    <div class="fb">
+      <div class="field"><label>Data ini</label><input type="date" id="f-ini" style="width:148px"/></div>
+      <div class="field"><label>Data fim</label><input type="date" id="f-fim" style="width:148px"/></div>
+      <div class="field"><label>Tipo</label><select id="f-tipo" style="width:120px"><option value="">Todos</option><option value="E">Entrada</option><option value="S">Saída</option></select></div>
+      <div class="field"><label>SKU</label><input id="f-sku" placeholder="Filtrar..." style="width:150px"/></div>
+      <div class="field"><label>Lote</label><input id="f-lote" placeholder="ex: L001" style="width:100px"/></div>
+      <div class="field"><label>Box</label><input id="f-box" placeholder="Filtrar..." style="width:120px"/></div>
+      <div class="field" style="align-self:flex-end"><button class="btn bp" onclick="filtrarRel()">Aplicar</button></div>
+      <div class="field" style="align-self:flex-end"><button class="btn" onclick="resetFiltros()">Limpar</button></div>
+    </div>
+    <div class="tw"><table>
+      <thead><tr><th>Data</th><th>Hora</th><th>Tipo</th><th>Código peça</th><th>SKU</th><th>Nome</th><th>Lote</th><th>Tam</th><th>Box</th></tr></thead>
+      <tbody id="tb-rel"><tr><td colspan="9" class="empty">Nenhum movimento</td></tr></tbody>
+    </table></div>
+    <div class="br" style="margin-top:12px">
+      <button class="btn" onclick="exportCSV()">⬇ Exportar CSV</button>
+      <button class="btn bd" onclick="zerarHist()">Zerar histórico</button>
+    </div>
+  </div>
+</div>
+
+<!-- ===== ESTOQUE ===== -->
+<div id="page-estoque" class="page">
+  <div class="page-title">Estoque Atual</div>
+  <div class="page-sub">Posição em tempo real. Nunca vai negativo.</div>
+  <div class="g2" style="align-items:start">
+    <div class="card">
+      <div class="card-title">Por SKU</div>
+      <div class="tw"><table><thead><tr><th>SKU</th><th>Nome</th><th>Cor</th><th>Saldo</th></tr></thead>
+      <tbody id="est-sku"><tr><td colspan="4" class="empty">Vazio</td></tr></tbody></table></div>
+    </div>
+    <div class="card">
+      <div class="card-title">Por Box</div>
+      <div class="tw"><table><thead><tr><th>Box</th><th>SKU</th><th>Qtd</th></tr></thead>
+      <tbody id="est-box"><tr><td colspan="3" class="empty">Vazio</td></tr></tbody></table></div>
+    </div>
+  </div>
+  <div class="card">
+    <div class="card-title">Por Lote</div>
+    <div class="tw"><table><thead><tr><th>Lote</th><th>Data</th><th>Produtos</th><th>Total gerado</th><th>Em estoque</th><th>Saídas</th></tr></thead>
+    <tbody id="est-lote"><tr><td colspan="6" class="empty">Nenhum lote</td></tr></tbody></table></div>
+  </div>
+</div>
+
+</main>
+</div>
+
+<script>
+// ─── STATE ───────────────────────────────────────────────────
+let produtos   = JSON.parse(localStorage.getItem('sp3_produtos')   || '[]');
+let boxes      = JSON.parse(localStorage.getItem('sp3_boxes')      || '[]');
+let lotes      = JSON.parse(localStorage.getItem('sp3_lotes')      || '[]');
+let movimentos = JSON.parse(localStorage.getItem('sp3_mov')        || '[]');
+let pecas      = JSON.parse(localStorage.getItem('sp3_pecas')      || '{}');
+let saldo      = JSON.parse(localStorage.getItem('sp3_saldo')      || '{}');
+let boxSaldo   = JSON.parse(localStorage.getItem('sp3_bsal')       || '{}');
+
+// lote em construção
+let _loteProds = []; // [{sku, nome, grade:{M:5,G:3,...}}]
+let _loteAtual = null;
+// movimentação
+let _eItems = {}; // cod -> {sku,nome,loteId,tam}
+let _sItems = {}; // cod -> {sku,nome,loteId,tam,ok,motivo}
+let _boxE = null, _boxS = null;
+
+// ─── UTILS ───────────────────────────────────────────────────
+function salvar() {
+  localStorage.setItem('sp3_produtos', JSON.stringify(produtos));
+  localStorage.setItem('sp3_boxes',    JSON.stringify(boxes));
+  localStorage.setItem('sp3_lotes',    JSON.stringify(lotes));
+  localStorage.setItem('sp3_mov',      JSON.stringify(movimentos));
+  localStorage.setItem('sp3_pecas',    JSON.stringify(pecas));
+  localStorage.setItem('sp3_saldo',    JSON.stringify(saldo));
+  localStorage.setItem('sp3_bsal',     JSON.stringify(boxSaldo));
+}
+let _tt;
+function toast(msg, type='') {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.className = 'show' + (type ? ' t-'+type : '');
+  clearTimeout(_tt); _tt = setTimeout(() => t.className = '', 2800);
+}
+function go(id, btn) {
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.nav-item').forEach(b => b.classList.remove('active'));
+  document.getElementById('page-' + id).classList.add('active');
+  if (btn) btn.classList.add('active');
+  ({
+    relatorio: () => { initF(); filtrarRel(); },
+    estoque:   renderEstoque,
+    entrada:   renderUltE,
+    saida:     renderUltS,
+    boxes:     renderBoxes,
+    produtos:  renderPGrid,
+    'lotes-list': renderLotesList,
+    lotes:     initLote
+  })[id]?.();
+}
+function openM(id)  { document.getElementById(id).classList.add('open'); }
+function closeM(id) { document.getElementById(id).classList.remove('open'); }
+document.querySelectorAll('.mo').forEach(el => el.addEventListener('click', e => { if (e.target===el) el.classList.remove('open'); }));
+
+function hoje() { return new Date().toISOString().split('T')[0]; }
+function agora() {
+  const n = new Date();
+  return { data: n.toLocaleDateString('pt-BR'), hora: n.toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'}), iso: n.toISOString().split('T')[0] };
+}
+function bc(code, elId) {
+  const el = document.getElementById(elId);
+  if (!code || code.length < 3) { el.innerHTML = '<div class="empty" style="padding:14px 0">Código curto demais</div>'; return; }
+  const svg = document.createElementNS('http://www.w3.org/2000/svg','svg');
+  const uid = 'b' + Math.random().toString(36).slice(2);
+  svg.id = uid; el.innerHTML = ''; el.appendChild(svg);
+  try { JsBarcode('#'+uid, code, {format:'CODE128',width:1.8,height:52,displayValue:true,fontSize:11,margin:6,background:'#fff',lineColor:'#000'}); }
+  catch(e) { el.innerHTML = '<div class="empty" style="color:#c00">Código inválido</div>'; }
+}
+
+// ─── PRODUTOS ────────────────────────────────────────────────
+const CAT_LABELS = {CAM:'Camisa',CAL:'Calça',VES:'Vestido',BER:'Bermuda',BLU:'Blusa',SAI:'Saia',JAQ:'Jaqueta',OUT:'Outro'};
+const COR_ABBR = { preto:'PTO',preta:'PTO',branco:'BCO',branca:'BCO',azul:'AZL',vermelho:'VML',vermelha:'VML',verde:'VRD',amarelo:'AML',amarela:'AML',rosa:'RSA',cinza:'CZA',marrom:'MRM',laranja:'LAR',roxo:'RXO',roxa:'RXO',bege:'BGE',nude:'NDE',vinho:'VNH',navy:'NVY' };
+
+let _skuT;
+function autoAbrCor() {
+  const cor = document.getElementById('p-cor').value.trim().toLowerCase();
+  const found = COR_ABBR[cor];
+  if (found) document.getElementById('p-cor-cod').value = found;
+  buildSKU();
+}
+
+function buildSKU() {
+  clearTimeout(_skuT);
+  _skuT = setTimeout(() => {
+    const ref = document.getElementById('p-ref').value.trim();
+    const cat = document.getElementById('p-cat').value;
+    const cod = document.getElementById('p-cor-cod').value.trim().toUpperCase();
+    const parts = [];
+    const disp = document.getElementById('p-sku-display');
+    const partsEl = document.getElementById('p-sku-parts');
+    if (!ref) { disp.textContent = '—'; partsEl.innerHTML = ''; document.getElementById('p-bc-box').innerHTML = '<div class="empty" style="padding:14px 0">Preencha os campos</div>'; return; }
+    parts.push(ref);
+    if (cat) parts.push(cat);
+    if (cod) parts.push(cod);
+    const sku = parts.join('-');
+    disp.textContent = sku;
+    partsEl.innerHTML = [
+      ref ? `<span class="sku-part bg-blue">${ref} referência</span>` : '',
+      cat ? `<span class="sku-part bg-amber">${cat} · ${CAT_LABELS[cat]||cat}</span>` : '',
+      cod ? `<span class="sku-part bg-gray">${cod} · ${document.getElementById('p-cor').value||'cor'}</span>` : ''
+    ].filter(Boolean).join('');
+    if (sku.length >= 4) { setTimeout(() => bc(sku, 'p-bc-box'), 50); }
+  }, 200);
+}
+
+function getSKU() {
+  const ref = document.getElementById('p-ref').value.trim();
+  const cat = document.getElementById('p-cat').value;
+  const cod = document.getElementById('p-cor-cod').value.trim().toUpperCase();
+  const parts = [ref];
+  if (cat) parts.push(cat);
+  if (cod) parts.push(cod);
+  return parts.filter(Boolean).join('-');
+}
+
+function salvarProduto() {
+  const ref  = document.getElementById('p-ref').value.trim();
+  const nome = document.getElementById('p-nome').value.trim();
+  const cat  = document.getElementById('p-cat').value;
+  const cor  = document.getElementById('p-cor').value.trim();
+  const corCod = document.getElementById('p-cor-cod').value.trim().toUpperCase();
+  if (!ref || ref.length < 4) { toast('Referência deve ter 4 dígitos', 'err'); return; }
+  if (!nome)  { toast('Informe o nome do produto', 'err'); return; }
+  if (!cat)   { toast('Selecione a categoria', 'err'); return; }
+  if (!corCod){ toast('Informe a abreviatura da cor', 'err'); return; }
+  const sku = getSKU();
+  if (produtos.find(p => p.sku === sku)) { toast('SKU '+sku+' já cadastrado!', 'warn'); return; }
+  produtos.push({ sku, ref, nome, cat, catNome: CAT_LABELS[cat]||cat, cor, corCod, forn: document.getElementById('p-forn').value.trim(), preco: document.getElementById('p-preco').value, obs: document.getElementById('p-obs').value.trim(), criado: new Date().toISOString() });
+  salvar(); toast('Produto '+sku+' salvo!', 'ok'); renderPGrid();
+  ['p-ref','p-nome','p-cor','p-cor-cod','p-forn','p-preco','p-obs'].forEach(id => document.getElementById(id).value = '');
+  document.getElementById('p-cat').value = '';
+  document.getElementById('p-sku-display').textContent = '—';
+  document.getElementById('p-sku-parts').innerHTML = '';
+  document.getElementById('p-bc-box').innerHTML = '<div class="empty" style="padding:14px 0">Preencha os campos</div>';
+}
+
+function renderPGrid() {
+  document.getElementById('p-count').textContent = produtos.length;
+  const el = document.getElementById('p-grid');
+  if (!produtos.length) { el.innerHTML = '<div class="empty" style="grid-column:1/-1">Nenhum produto</div>'; return; }
+  el.innerHTML = produtos.map((p,i) => `<div class="pcard" onclick="showProd(${i})">
+    <div class="pcode2">${p.sku}</div>
+    <div class="pname2">${p.nome}</div>
+    <div style="display:flex;gap:4px;flex-wrap:wrap">
+      <span class="badge bg-amber">${p.catNome||p.cat}</span>
+      <span class="badge bg-gray">${p.cor||p.corCod}</span>
+      ${(saldo[p.sku]||0)>0?`<span class="badge bg-green">${saldo[p.sku]} est.</span>`:''}
+    </div>
+  </div>`).join('');
+}
+
+function showProd(i) {
+  const p = produtos[i];
+  document.getElementById('mo-prod-title').textContent = p.sku;
+  document.getElementById('mo-prod-body').innerHTML = `
+    <div class="barcode-box" id="bc-prod-d" style="margin-bottom:14px"></div>
+    <table style="width:100%;font-size:13px;border-collapse:collapse">
+      ${[['SKU',p.sku],['Nome',p.nome],['Categoria',p.catNome||p.cat],['Cor',p.cor+' ('+p.corCod+')'],['Fornecedor',p.forn||'—'],['Custo',p.preco?'R$ '+p.preco:'—'],['Estoque',(saldo[p.sku]||0)+' peças'],['Obs',p.obs||'—']].map(([l,v])=>
+        `<tr><td style="padding:5px 0;color:var(--t2);font-family:var(--mono);font-size:11px;width:100px">${l}</td><td style="padding:5px 0;font-weight:500">${v}</td></tr>`
+      ).join('')}
+    </table>
+    <div class="br" style="margin-top:14px">
+      <button class="btn bd" onclick="excluirProd(${i})">Excluir</button>
+    </div>`;
+  openM('mo-prod');
+  setTimeout(() => bc(p.sku, 'bc-prod-d'), 80);
+}
+function excluirProd(i) {
+  if (!confirm('Excluir '+produtos[i].sku+'?')) return;
+  produtos.splice(i,1); salvar(); renderPGrid(); closeM('mo-prod'); toast('Produto excluído');
+}
+
+// ─── BOXES ───────────────────────────────────────────────────
+function prevBoxBC() {
+  const cod = document.getElementById('b-cod').value.trim().toUpperCase();
+  if (cod.length >= 3) bc(cod, 'b-bc-box');
+  else document.getElementById('b-bc-box').innerHTML = '<div class="empty" style="padding:14px 0">Preencha o código</div>';
+}
+function salvarBox() {
+  const cod = document.getElementById('b-cod').value.trim().toUpperCase();
+  if (!cod) { toast('Informe o código', 'err'); return; }
+  if (boxes.find(b => b.cod === cod)) { toast('Código já existe!', 'warn'); return; }
+  boxes.push({ cod, desc: document.getElementById('b-desc').value.trim(), setor: document.getElementById('b-setor').value, cap: document.getElementById('b-cap').value, criado: new Date().toISOString() });
+  salvar(); toast('Box '+cod+' salvo!', 'ok'); renderBoxes();
+  ['b-cod','b-desc','b-cap'].forEach(id => document.getElementById(id).value = '');
+  document.getElementById('b-setor').value = '';
+  document.getElementById('b-bc-box').innerHTML = '<div class="empty" style="padding:14px 0">Preencha o código</div>';
+}
+function renderBoxes() {
+  document.getElementById('b-count').textContent = boxes.length;
+  const tb = document.getElementById('b-tbody');
+  if (!boxes.length) { tb.innerHTML = '<tr><td colspan="4" class="empty">Nenhum box</td></tr>'; return; }
+  tb.innerHTML = boxes.map((b,i) => `<tr>
+    <td class="code">${b.cod}</td><td>${b.desc||'—'}</td>
+    <td>${b.setor?`<span class="badge bg-blue">${b.setor}</span>`:'—'}</td>
+    <td><button class="btn btn-sm" onclick="etiqBox('${b.cod}')">Etiqueta</button>
+        <button class="btn btn-sm bd" onclick="excBox(${i})" style="margin-left:4px">×</button></td>
+  </tr>`).join('');
+}
+function excBox(i) { if (!confirm('Excluir?')) return; boxes.splice(i,1); salvar(); renderBoxes(); toast('Excluído'); }
+function etiqBox(cod) {
+  const box = boxes.find(b => b.cod === cod);
+  document.getElementById('mo-etiq-title').textContent = 'Etiqueta Box — ' + cod;
+  document.getElementById('mo-etiq-body').innerHTML = `<div class="barcode-box" id="bc-box-et" style="max-width:300px;margin:0 auto">
+    <div style="font-family:var(--mono);font-size:12px;font-weight:600">${box?box.desc||cod:cod}</div>
+  </div>`;
+  window._etiqPrint = { cods: [cod], lote: { nome: box?box.desc||cod:cod, codigosPorProd: {} } };
+  openM('mo-etiq');
+  setTimeout(() => bc(cod, 'bc-box-et'), 80);
+}
+
+// ─── LOTES ───────────────────────────────────────────────────
+const TAMANHOS = ['PP','P','M','G','GG','XG','36','38','40','42','44','46'];
+
+function initLote() {
+  _loteProds = [];
+  _loteAtual = null;
+  const num = 'L' + String(lotes.length + 1).padStart(3, '0');
+  document.getElementById('l-num-display').textContent = num;
+  document.getElementById('l-data').value = hoje();
+  document.getElementById('l-obs').value = '';
+  document.getElementById('l-result-wrap').style.display = 'none';
+  document.getElementById('btn-gerar').style.display = 'none';
+  document.getElementById('l-total-wrap').style.display = 'none';
+  document.getElementById('l-empty-prod').style.display = '';
+  document.getElementById('l-prods-wrap').innerHTML = '<div class="empty" id="l-empty-prod">Nenhum produto adicionado ao lote</div>';
+  // popular select
+  const sel = document.getElementById('l-prod-sel');
+  sel.innerHTML = '<option value="">Selecione um produto para adicionar...</option>' +
+    produtos.map(p => `<option value="${p.sku}">${p.sku} — ${p.nome}</option>`).join('');
+}
+
+function adicionarProdLote() {
+  const sku = document.getElementById('l-prod-sel').value;
+  if (!sku) { toast('Selecione um produto', 'warn'); return; }
+  if (_loteProds.find(x => x.sku === sku)) { toast('Produto já adicionado', 'warn'); return; }
+  const prod = produtos.find(p => p.sku === sku);
+  _loteProds.push({ sku, nome: prod.nome, cor: prod.cor, corCod: prod.corCod, grade: {} });
+  document.getElementById('l-prod-sel').value = '';
+  renderLoteForm();
+}
+
+function renderLoteForm() {
+  const wrap = document.getElementById('l-prods-wrap');
+  if (!_loteProds.length) {
+    wrap.innerHTML = '<div class="empty" id="l-empty-prod">Nenhum produto adicionado ao lote</div>';
+    document.getElementById('btn-gerar').style.display = 'none';
+    document.getElementById('l-total-wrap').style.display = 'none';
+    return;
+  }
+  wrap.innerHTML = _loteProds.map((lp, pi) => `
+    <div class="lote-prod-card">
+      <div class="lote-prod-header">
+        <div>
+          <div class="lote-prod-name">${lp.sku} — ${lp.nome}</div>
+          <div style="font-size:11px;color:var(--t2);font-family:var(--mono)">${lp.cor||''} (${lp.corCod||''})</div>
+        </div>
+        <button class="btn btn-sm bd" onclick="remProdLote(${pi})">Remover</button>
+      </div>
+      <div style="font-size:11px;font-family:var(--mono);color:var(--t2);margin-bottom:8px">Grade de tamanhos:</div>
+      <div style="display:flex;flex-wrap:wrap;gap:8px">
+        ${TAMANHOS.map(t => `
+          <div style="display:flex;flex-direction:column;align-items:center;gap:3px;min-width:48px">
+            <label style="font-size:10px;margin:0">${t}</label>
+            <input type="number" min="0" value="${lp.grade[t]||0}" style="width:48px;height:30px;text-align:center;font-family:var(--mono);font-weight:600;font-size:13px"
+              oninput="setGrade(${pi},'${t}',this.value)"/>
+          </div>`).join('')}
+      </div>
+      <div style="margin-top:8px;font-size:11px;font-family:var(--mono);color:var(--t2)">
+        Subtotal: <strong id="sub-${pi}">0</strong> peças
+      </div>
+    </div>`).join('');
+  atualizarTotais();
+  document.getElementById('btn-gerar').style.display = '';
+  document.getElementById('l-total-wrap').style.display = '';
+}
+
+function remProdLote(i) { _loteProds.splice(i,1); renderLoteForm(); }
+
+function setGrade(pi, tam, val) {
+  _loteProds[pi].grade[tam] = parseInt(val) || 0;
+  atualizarTotais();
+}
+
+function atualizarTotais() {
+  let gTotal = 0;
+  _loteProds.forEach((lp, pi) => {
+    const sub = Object.values(lp.grade).reduce((a,b)=>a+b,0);
+    gTotal += sub;
+    const el = document.getElementById('sub-'+pi);
+    if (el) el.textContent = sub;
+  });
+  const numLote = document.getElementById('l-num-display').textContent;
+  document.getElementById('l-resumo').innerHTML = `
+    <div style="display:flex;gap:16px;flex-wrap:wrap">
+      <div><span style="font-family:var(--mono);font-weight:600;font-size:22px;color:var(--blue)">${gTotal}</span>
+        <div style="font-size:11px;color:var(--t2)">peças totais</div></div>
+      <div><span style="font-family:var(--mono);font-weight:600;font-size:22px">${_loteProds.length}</span>
+        <div style="font-size:11px;color:var(--t2)">produto(s)</div></div>
+      <div><span style="font-family:var(--mono);font-weight:600;font-size:22px;color:var(--blue)">${numLote}</span>
+        <div style="font-size:11px;color:var(--t2)">número do lote</div></div>
+    </div>`;
+}
+
+function gerarLote() {
+  if (!_loteProds.length) { toast('Adicione ao menos um produto', 'err'); return; }
+  const total = _loteProds.reduce((a,lp) => a + Object.values(lp.grade).reduce((x,y)=>x+y,0), 0);
+  if (total === 0) { toast('Informe ao menos 1 peça na grade', 'err'); return; }
+
+  const loteNum = String(lotes.length + 1).padStart(3, '0');
+  const loteId  = 'L' + loteNum;
+  const codigosPorProd = {};
+
+  _loteProds.forEach(lp => {
+    codigosPorProd[lp.sku] = {};
+    TAMANHOS.forEach(tam => {
+      const qty = lp.grade[tam] || 0;
+      if (!qty) return;
+      codigosPorProd[lp.sku][tam] = [];
+      for (let i = 1; i <= qty; i++) {
+        const seq = String(i).padStart(4, '0');
+        const cod = `${lp.sku}-${loteId}-${tam}-${seq}`;
+        codigosPorProd[lp.sku][tam].push(cod);
+        pecas[cod] = { sku: lp.sku, nome: lp.nome, cor: lp.cor, corCod: lp.corCod, loteId, tam, seq, status: 'pending' };
+      }
+    });
+  });
+
+  const lote = {
+    id: loteId, loteNum,
+    prods: _loteProds.map(lp => ({ sku: lp.sku, nome: lp.nome, cor: lp.cor, corCod: lp.corCod, grade: {...lp.grade} })),
+    codigosPorProd,
+    totalPecas: total,
+    obs: document.getElementById('l-obs').value.trim(),
+    dataFab: document.getElementById('l-data').value,
+    criado: new Date().toISOString(),
+    emEstoque: 0
+  };
+  lotes.push(lote);
+  salvar();
+  _loteAtual = lote;
+  toast(`Lote ${loteId} criado — ${total} peças!`, 'ok');
+  renderLoteResult(lote);
+}
+
+function renderLoteResult(lote) {
+  document.getElementById('l-result-wrap').style.display = '';
+  document.getElementById('l-res-id').textContent = lote.id;
+  document.getElementById('l-res-total').textContent = lote.totalPecas;
+  const body = document.getElementById('l-res-body');
+  body.innerHTML = lote.prods.map(lp => {
+    const tams = Object.entries(lote.codigosPorProd[lp.sku]||{});
+    const subtotal = tams.reduce((a,[,c])=>a+c.length,0);
+    return `<div style="margin-bottom:12px;padding:12px;background:var(--s2);border-radius:var(--r)">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
+        <div>
+          <span style="font-family:var(--mono);font-weight:600;font-size:13px">${lp.sku}</span>
+          <span style="color:var(--t2);font-size:12px;margin-left:6px">${lp.nome} · ${lp.cor||lp.corCod}</span>
+        </div>
+        <div style="display:flex;gap:6px;align-items:center">
+          <span class="badge bg-blue">${subtotal} peças</span>
+          <button class="btn btn-sm" onclick="etiqProdLote('${lote.id}','${lp.sku}')">Etiquetas</button>
+        </div>
+      </div>
+      <div style="display:flex;gap:6px;flex-wrap:wrap">
+        ${tams.map(([t,c])=>`<span class="badge bg-gray">Tam.${t}: ${c.length}</span>`).join('')}
+      </div>
+      <div style="font-size:10px;font-family:var(--mono);color:var(--t3);margin-top:6px">
+        ${tams[0]?tams[0][1][0]:''}  …  ${tams[tams.length-1]?tams[tams.length-1][1].slice(-1)[0]:''}
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function etiqProdLote(loteId, sku) {
+  const lote = lotes.find(l => l.id === loteId);
+  const cods = Object.values(lote.codigosPorProd[sku]||{}).flat();
+  abrirEtiquetas(`Etiquetas — ${sku} · Lote ${loteId}`, cods, lote);
+}
+
+function imprimirTodoLote() {
+  const lote = _loteAtual || lotes[lotes.length-1];
+  if (!lote) return;
+  const cods = Object.values(lote.codigosPorProd).flatMap(x => Object.values(x).flat());
+  abrirEtiquetas(`Etiquetas — Lote ${lote.id}`, cods, lote);
+}
+
+function abrirEtiquetas(titulo, cods, lote) {
+  document.getElementById('mo-etiq-title').textContent = titulo;
+  const prev = cods.slice(0, 12);
+  document.getElementById('mo-etiq-body').innerHTML = `
+    <div style="font-size:12px;color:var(--t2);margin-bottom:10px">${cods.length} etiquetas · mostrando ${prev.length} no preview</div>
+    <div style="display:flex;flex-wrap:wrap;gap:4px;justify-content:center;max-height:380px;overflow-y:auto">
+      ${prev.map(cod => {
+        const p = pecas[cod]||{};
+        return `<div class="etiq">
+          <div class="en">${p.nome||lote.nome||''}</div>
+          <div class="es">${p.tam?'Tam. '+p.tam:''} ${p.cor||''}</div>
+          <svg id="esvg_${cod.replace(/[^a-z0-9]/gi,'_')}"></svg>
+          <div class="ec">${cod}</div>
+        </div>`;
+      }).join('')}
+    </div>`;
+  window._etiqPrint = { cods, lote };
+  openM('mo-etiq');
+  setTimeout(() => {
+    prev.forEach(cod => {
+      try { JsBarcode('#esvg_'+cod.replace(/[^a-z0-9]/gi,'_'), cod, {format:'CODE128',width:1.1,height:38,displayValue:false,margin:2,background:'#fff',lineColor:'#000'}); } catch(e){}
+    });
+  }, 100);
+}
+
+function doPrint() {
+  if (!window._etiqPrint) return;
+  const { cods, lote } = window._etiqPrint;
+  const pa = document.getElementById('print-area');
+  pa.style.display = '';
+  pa.innerHTML = '<div style="display:flex;flex-wrap:wrap">' + cods.map(cod => {
+    const p = pecas[cod]||{};
+    const uid = 'pbc_'+cod.replace(/[^a-z0-9]/gi,'_');
+    return `<div class="etiq">
+      <div class="en">${p.nome||''}</div>
+      <div class="es">${p.tam?'Tam. '+p.tam:''} ${p.cor||''}</div>
+      <svg id="${uid}"></svg>
+      <div class="ec">${cod}</div>
+    </div>`;
+  }).join('') + '</div>';
+  setTimeout(() => {
+    cods.forEach(cod => {
+      try { JsBarcode('#pbc_'+cod.replace(/[^a-z0-9]/gi,'_'), cod, {format:'CODE128',width:1.1,height:38,displayValue:false,margin:2,background:'#fff',lineColor:'#000'}); } catch(e){}
+    });
+    setTimeout(() => { window.print(); pa.style.display='none'; pa.innerHTML=''; }, 400);
+  }, 200);
+}
+
+function darEntradaLote() {
+  const lote = _loteAtual;
+  if (!lote) { toast('Gere um lote primeiro', 'warn'); return; }
+  const cods = Object.values(lote.codigosPorProd).flatMap(x => Object.values(x).flat());
+  const now = agora();
+  cods.forEach(cod => {
+    if (pecas[cod]) pecas[cod].status = 'in';
+    const sku = pecas[cod]?.sku;
+    if (sku) saldo[sku] = (saldo[sku]||0) + 1;
+    movimentos.push({ data:now.data, iso:now.iso, hora:now.hora, tipo:'E', cod, sku: pecas[cod]?.sku||'', nome: pecas[cod]?.nome||'', loteId:lote.id, tam: pecas[cod]?.tam||'', box:'—' });
+  });
+  lote.emEstoque = (lote.emEstoque||0) + cods.length;
+  salvar();
+  toast(`✓ ${cods.length} peças do lote ${lote.id} entradas!`, 'ok');
+  _loteAtual = null;
+  document.getElementById('l-result-wrap').style.display = 'none';
+}
+
+// ─── LOTES LIST ───────────────────────────────────────────────
+function renderLotesList() {
+  const el = document.getElementById('lotes-grid');
+  if (!lotes.length) { el.innerHTML = '<div class="empty" style="grid-column:1/-1">Nenhum lote</div>'; return; }
+  el.innerHTML = [...lotes].reverse().map((l, ri) => {
+    const i = lotes.length - 1 - ri;
+    const allCods = Object.values(l.codigosPorProd||{}).flatMap(x=>Object.values(x).flat());
+    const inEst = allCods.filter(c=>pecas[c]&&pecas[c].status==='in').length;
+    return `<div class="card" style="cursor:pointer" onclick="showLote(${i})">
+      <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:8px">
+        <div class="lote-num" style="font-size:22px">${l.id}</div>
+        <span class="badge bg-green">${inEst} em est.</span>
+      </div>
+      <div style="font-size:12px;color:var(--t2);margin-bottom:6px">${new Date(l.criado).toLocaleDateString('pt-BR')} · ${l.prods.length} produto(s)</div>
+      <div style="display:flex;gap:4px;flex-wrap:wrap">
+        ${l.prods.map(p=>`<span class="badge bg-gray">${p.sku}</span>`).join('')}
+      </div>
+      <div style="margin-top:8px;display:flex;gap:6px">
+        <span class="badge bg-blue">${l.totalPecas} geradas</span>
+        <span class="badge bg-red">${allCods.filter(c=>pecas[c]&&pecas[c].status==='out').length} saídas</span>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function showLote(i) {
+  const l = lotes[i];
+  const allCods = Object.values(l.codigosPorProd||{}).flatMap(x=>Object.values(x).flat());
+  const inEst = allCods.filter(c=>pecas[c]&&pecas[c].status==='in').length;
+  const saiu  = allCods.filter(c=>pecas[c]&&pecas[c].status==='out').length;
+  document.getElementById('mo-lote-title').textContent = l.id + ' — ' + new Date(l.criado).toLocaleDateString('pt-BR');
+  document.getElementById('mo-lote-body').innerHTML = `
+    <div class="g3" style="margin-bottom:14px">
+      <div class="mc"><div class="mlabel">Total gerado</div><div class="mval">${l.totalPecas}</div></div>
+      <div class="mc"><div class="mlabel">Em estoque</div><div class="mval" style="color:var(--green)">${inEst}</div></div>
+      <div class="mc"><div class="mlabel">Saídas</div><div class="mval" style="color:var(--red)">${saiu}</div></div>
+    </div>
+    <div style="margin-bottom:14px">${l.obs?`<span class="badge bg-amber">${l.obs}</span>`:''} ${l.dataFab?`<span class="badge bg-gray">Fab: ${l.dataFab}</span>`:''}</div>
+    <div class="card-title">Produtos do lote</div>
+    ${l.prods.map(lp => {
+      const tams = Object.entries(l.codigosPorProd[lp.sku]||{});
+      const sub = tams.reduce((a,[,c])=>a+c.length,0);
+      return `<div style="margin-bottom:10px;padding:10px;background:var(--s2);border-radius:var(--r)">
+        <div style="display:flex;justify-content:space-between;margin-bottom:6px">
+          <span style="font-family:var(--mono);font-weight:600">${lp.sku} — ${lp.nome}</span>
+          <div style="display:flex;gap:6px">
+            <span class="badge bg-blue">${sub} pç</span>
+            <button class="btn btn-sm" onclick="etiqProdLote('${l.id}','${lp.sku}')">Etiquetas</button>
+          </div>
+        </div>
+        <div style="display:flex;gap:5px;flex-wrap:wrap">
+          ${tams.map(([t,c])=>`<span class="badge bg-gray">Tam.${t}: ${c.length}</span>`).join('')}
+        </div>
+      </div>`;
+    }).join('')}
+    <div class="br" style="margin-top:14px">
+      <button class="btn bp" onclick="imprimirLoteById(${i})">🖨 Imprimir etiquetas</button>
+      <button class="btn bs" onclick="darEntradaById(${i})">⬇ Dar entrada</button>
+    </div>`;
+  openM('mo-lote');
+}
+function imprimirLoteById(i) {
+  const l = lotes[i];
+  const cods = Object.values(l.codigosPorProd).flatMap(x=>Object.values(x).flat());
+  abrirEtiquetas('Etiquetas — '+l.id, cods, l);
+}
+function darEntradaById(i) {
+  _loteAtual = lotes[i];
+  darEntradaLote();
+  closeM('mo-lote');
+}
+
+// ─── ENTRADA ─────────────────────────────────────────────────
+function bipE() {
+  const inp = document.getElementById('inp-e');
+  const cod = inp.value.trim().toUpperCase();
+  inp.value = ''; inp.focus();
+  if (!cod) return;
+  const info = document.getElementById('e-info');
+  if (_eItems[cod]) { info.innerHTML = '<div class="spill spill-warn">Código já adicionado</div>'; return; }
+  const p = pecas[cod];
+  if (p) {
+    _eItems[cod] = { sku: p.sku, nome: p.nome, loteId: p.loteId, tam: p.tam };
+    info.innerHTML = `<div class="spill spill-ok">✓ ${p.nome} · Tam.${p.tam} · Lote ${p.loteId}</div>`;
+  } else {
+    const prod = produtos.find(x => x.sku === cod);
+    if (prod) {
+      const uid = cod + '_av_' + Date.now();
+      _eItems[uid] = { sku: cod, nome: prod.nome, loteId: '—', tam: '—', avulso: true, displayCod: cod };
+      info.innerHTML = `<div class="spill spill-ok">✓ SKU avulso: ${prod.nome}</div>`;
+    } else {
+      info.innerHTML = `<div class="spill spill-err">⚠ Código não encontrado</div>`; return;
+    }
+  }
+  renderListaE();
+}
+function renderListaE() {
+  const el = document.getElementById('lista-e');
+  const keys = Object.keys(_eItems);
+  document.getElementById('e-tot').textContent = keys.length;
+  if (!keys.length) { el.innerHTML = '<div class="empty">Aguardando...</div>'; return; }
+  el.innerHTML = keys.map(k => {
+    const it = _eItems[k];
+    return `<div class="irow">
+      <div><span class="stag">${it.displayCod||k}</span>
+        <span style="font-size:11px;color:var(--t2);margin-left:6px">${it.nome} ${it.tam&&it.tam!=='—'?'Tam.'+it.tam:''}</span>
+      </div>
+      <button class="btn btn-sm bd" onclick="remE('${k}')">×</button>
+    </div>`;
+  }).join('');
+}
+function remE(k) { delete _eItems[k]; renderListaE(); }
+function setBoxE() {
+  const cod = document.getElementById('inp-box-e').value.trim().toUpperCase();
+  if (!cod) return; _boxE = cod;
+  const box = boxes.find(b => b.cod === cod);
+  document.getElementById('box-e-prev').innerHTML = `<div class="spill spill-ok">📦 ${cod}${box?' · '+box.desc:''}</div>`;
+}
+function confEntrada() {
+  const keys = Object.keys(_eItems);
+  if (!keys.length) { toast('Adicione peças', 'err'); return; }
+  const now = agora();
+  keys.forEach(k => {
+    const it = _eItems[k];
+    if (it.avulso) {
+      saldo[it.sku] = (saldo[it.sku]||0) + 1;
+    } else {
+      if (pecas[k]) pecas[k].status = 'in';
+      saldo[it.sku] = (saldo[it.sku]||0) + 1;
+      if (_boxE) { if (!boxSaldo[_boxE]) boxSaldo[_boxE]={}; boxSaldo[_boxE][it.sku]=(boxSaldo[_boxE][it.sku]||0)+1; }
+    }
+    movimentos.push({ data:now.data, iso:now.iso, hora:now.hora, tipo:'E', cod:it.avulso?it.sku:k, sku:it.sku, nome:it.nome, loteId:it.loteId, tam:it.tam, box:_boxE||'—' });
+  });
+  salvar(); toast(`✓ ${keys.length} peça(s) entradas`, 'ok');
+  _eItems={}; _boxE=null;
+  renderListaE(); document.getElementById('box-e-prev').innerHTML=''; document.getElementById('inp-box-e').value=''; document.getElementById('e-info').innerHTML='';
+  renderUltE();
+}
+function limpE() { _eItems={}; _boxE=null; renderListaE(); document.getElementById('box-e-prev').innerHTML=''; document.getElementById('inp-box-e').value=''; document.getElementById('e-info').innerHTML=''; }
+function renderUltE() {
+  const tb = document.getElementById('ult-e');
+  const hj = new Date().toLocaleDateString('pt-BR');
+  const items = movimentos.filter(m=>m.tipo==='E'&&m.data===hj).slice(-8).reverse();
+  if (!items.length) { tb.innerHTML = '<tr><td colspan="4" class="empty">—</td></tr>'; return; }
+  tb.innerHTML = items.map(m=>`<tr>
+    <td class="code">${m.hora}</td>
+    <td class="code" style="font-size:10px;max-width:140px;overflow:hidden;text-overflow:ellipsis" title="${m.cod}">${m.cod}</td>
+    <td class="code">${m.sku}</td><td class="code">${m.box}</td>
+  </tr>`).join('');
+}
+
+// ─── SAÍDA ────────────────────────────────────────────────────
+function bipS() {
+  const inp = document.getElementById('inp-s');
+  const cod = inp.value.trim().toUpperCase();
+  inp.value = ''; inp.focus();
+  if (!cod) return;
+  const info = document.getElementById('s-info');
+  if (_sItems[cod]) { info.innerHTML = '<div class="spill spill-warn">Já adicionado</div>'; return; }
+  const p = pecas[cod];
+  if (p) {
+    if (p.status !== 'in') {
+      info.innerHTML = `<div class="spill spill-err">⛔ Peça não está em estoque (${p.status==='out'?'já saiu':'pendente'})</div>`;
+      _sItems[cod] = { sku:p.sku, nome:p.nome, tam:p.tam, loteId:p.loteId, ok:false, motivo:'status:'+p.status };
+    } else {
+      info.innerHTML = `<div class="spill spill-ok">✓ ${p.nome} · Tam.${p.tam} · Lote ${p.loteId}</div>`;
+      _sItems[cod] = { sku:p.sku, nome:p.nome, tam:p.tam, loteId:p.loteId, ok:true };
+    }
+  } else {
+    const prod = produtos.find(x => x.sku === cod);
+    const disp = (saldo[cod]||0) - Object.values(_sItems).filter(x=>x.sku===cod&&x.ok&&x.avulso).length;
+    if (!prod && disp === 0) { info.innerHTML = `<div class="spill spill-err">Código não encontrado</div>`; return; }
+    if (disp <= 0) {
+      info.innerHTML = `<div class="spill spill-err">⛔ Saldo insuficiente — ${cod} (saldo: ${saldo[cod]||0})</div>`;
+      _sItems[cod+'_B'+Date.now()] = { sku:cod, nome:prod?prod.nome:cod, ok:false, motivo:'saldo zero', avulso:true };
+    } else {
+      info.innerHTML = `<div class="spill spill-ok">✓ SKU avulso · saldo disponível: ${disp}</div>`;
+      _sItems[cod] = { sku:cod, nome:prod?prod.nome:cod, ok:true, avulso:true, tam:'—', loteId:'—' };
+    }
+  }
+  renderListaS();
+}
+function renderListaS() {
+  const el = document.getElementById('lista-s');
+  const keys = Object.keys(_sItems);
+  const ok   = keys.filter(k=>_sItems[k].ok).length;
+  const bloq = keys.filter(k=>!_sItems[k].ok).length;
+  document.getElementById('s-ok').textContent   = ok;
+  document.getElementById('s-bloq').textContent = bloq;
+  if (!keys.length) { el.innerHTML = '<div class="empty">Aguardando...</div>'; return; }
+  el.innerHTML = keys.map(k=>{
+    const it=_sItems[k];
+    return `<div class="irow">
+      <div><span class="stag" style="${it.ok?'':'color:var(--red)'}">${it.avulso?it.sku:k}</span>
+        <span style="font-size:11px;color:var(--t2);margin-left:6px">${it.nome} ${it.tam&&it.tam!=='—'?'Tam.'+it.tam:''}</span>
+        ${!it.ok?'<span class="badge bg-red" style="margin-left:4px">bloqueada</span>':''}
+      </div>
+      <button class="btn btn-sm bd" onclick="remS('${k}')">×</button>
+    </div>`;
+  }).join('');
+}
+function remS(k) { delete _sItems[k]; renderListaS(); }
+function setBoxS() {
+  const cod = document.getElementById('inp-box-s').value.trim().toUpperCase();
+  if (!cod) return; _boxS = cod;
+  const box = boxes.find(b => b.cod === cod);
+  document.getElementById('box-s-prev').innerHTML = `<div class="spill spill-err" style="background:var(--rbg);border-color:#ddb0b0;color:var(--red)">📦 ${cod}${box?' · '+box.desc:''}</div>`;
+}
+function confSaida() {
+  const okKeys   = Object.keys(_sItems).filter(k=>_sItems[k].ok);
+  const bloqKeys = Object.keys(_sItems).filter(k=>!_sItems[k].ok);
+  if (!okKeys.length) { toast('Nenhuma peça válida', 'err'); return; }
+  if (bloqKeys.length && !confirm(`${bloqKeys.length} peça(s) bloqueadas serão IGNORADAS. Confirmar saída de ${okKeys.length} peças?`)) return;
+  const now = agora();
+  okKeys.forEach(k=>{
+    const it=_sItems[k];
+    if (it.avulso) {
+      saldo[it.sku]=Math.max(0,(saldo[it.sku]||0)-1);
+    } else {
+      if(pecas[k]) pecas[k].status='out';
+      saldo[it.sku]=Math.max(0,(saldo[it.sku]||0)-1);
+      if(_boxS&&boxSaldo[_boxS]) boxSaldo[_boxS][it.sku]=Math.max(0,(boxSaldo[_boxS][it.sku]||0)-1);
+    }
+    movimentos.push({data:now.data,iso:now.iso,hora:now.hora,tipo:'S',cod:it.avulso?it.sku:k,sku:it.sku,nome:it.nome,loteId:it.loteId||'—',tam:it.tam||'—',box:_boxS||'—'});
+  });
+  salvar(); toast(`✓ ${okKeys.length} saídas${bloqKeys.length?' ('+bloqKeys.length+' ignoradas)':''}`, bloqKeys.length?'warn':'ok');
+  _sItems={}; _boxS=null;
+  renderListaS(); document.getElementById('box-s-prev').innerHTML=''; document.getElementById('inp-box-s').value=''; document.getElementById('s-info').innerHTML='';
+  renderUltS();
+}
+function limpS() { _sItems={}; _boxS=null; renderListaS(); document.getElementById('box-s-prev').innerHTML=''; document.getElementById('inp-box-s').value=''; document.getElementById('s-info').innerHTML=''; }
+function renderUltS() {
+  const tb=document.getElementById('ult-s');
+  const hj=new Date().toLocaleDateString('pt-BR');
+  const items=movimentos.filter(m=>m.tipo==='S'&&m.data===hj).slice(-8).reverse();
+  if(!items.length){tb.innerHTML='<tr><td colspan="4" class="empty">—</td></tr>';return;}
+  tb.innerHTML=items.map(m=>`<tr>
+    <td class="code">${m.hora}</td>
+    <td class="code" style="font-size:10px;max-width:140px;overflow:hidden;text-overflow:ellipsis" title="${m.cod}">${m.cod}</td>
+    <td class="code">${m.sku}</td><td class="code">${m.box}</td>
+  </tr>`).join('');
+}
+
+// ─── RELATÓRIO ────────────────────────────────────────────────
+let _fMov = [];
+function initF() {
+  const h=hoje();
+  if(!document.getElementById('f-ini').value) document.getElementById('f-ini').value=h;
+  if(!document.getElementById('f-fim').value) document.getElementById('f-fim').value=h;
+}
+function filtrarRel() {
+  const ini=document.getElementById('f-ini').value, fim=document.getElementById('f-fim').value;
+  const tipo=document.getElementById('f-tipo').value, sku=document.getElementById('f-sku').value.trim().toUpperCase();
+  const lote=document.getElementById('f-lote').value.trim().toUpperCase(), box=document.getElementById('f-box').value.trim().toUpperCase();
+  _fMov=movimentos.filter(m=>{
+    if(ini&&m.iso<ini)return false; if(fim&&m.iso>fim)return false;
+    if(tipo&&m.tipo!==tipo)return false;
+    if(sku&&!m.sku.includes(sku)&&!m.cod.includes(sku))return false;
+    if(lote&&(!m.loteId||!m.loteId.includes(lote)))return false;
+    if(box&&m.box!=='—'&&!m.box.includes(box))return false;
+    return true;
+  });
+  const ent=_fMov.filter(m=>m.tipo==='E').length, sai=_fMov.filter(m=>m.tipo==='S').length;
+  document.getElementById('r-tot').textContent=_fMov.length;
+  document.getElementById('r-ent').textContent=ent;
+  document.getElementById('r-sai').textContent=sai;
+  document.getElementById('r-sal').textContent=ent-sai;
+  document.getElementById('r-per').textContent=ini===fim?ini:ini+' → '+fim;
+  const tb=document.getElementById('tb-rel');
+  if(!_fMov.length){tb.innerHTML='<tr><td colspan="9" class="empty">Nenhum movimento</td></tr>';return;}
+  tb.innerHTML=[..._fMov].reverse().map(m=>`<tr>
+    <td class="code">${m.data}</td><td class="code">${m.hora}</td>
+    <td><span class="badge ${m.tipo==='E'?'bg-green':'bg-red'}">${m.tipo==='E'?'Entrada':'Saída'}</span></td>
+    <td class="code" style="font-size:10px;max-width:130px;overflow:hidden;text-overflow:ellipsis" title="${m.cod}">${m.cod}</td>
+    <td class="code">${m.sku}</td>
+    <td style="color:var(--t2)">${m.nome||'—'}</td>
+    <td class="code">${m.loteId||'—'}</td>
+    <td class="code">${m.tam||'—'}</td>
+    <td class="code">${m.box}</td>
+  </tr>`).join('');
+}
+function resetFiltros(){document.getElementById('f-tipo').value='';document.getElementById('f-sku').value='';document.getElementById('f-lote').value='';document.getElementById('f-box').value='';initF();filtrarRel();}
+function exportCSV(){
+  if(!_fMov.length){toast('Sem dados','warn');return;}
+  const h='Data,Hora,Tipo,Codigo,SKU,Nome,Lote,Tam,Box';
+  const rows=_fMov.map(m=>`${m.data},${m.hora},${m.tipo==='E'?'Entrada':'Saída'},"${m.cod}",${m.sku},"${m.nome||''}",${m.loteId||'—'},${m.tam||'—'},${m.box}`);
+  const a=document.createElement('a');
+  a.href='data:text/csv;charset=utf-8,'+encodeURIComponent([h,...rows].join('\n'));
+  a.download='movimentos_'+hoje()+'.csv'; a.click(); toast('CSV exportado!','ok');
+}
+function zerarHist(){if(!confirm('Apagar TODOS os movimentos?'))return; movimentos=[];salvar();filtrarRel();toast('Histórico zerado');}
+
+// ─── ESTOQUE ─────────────────────────────────────────────────
+function renderEstoque(){
+  const tb1=document.getElementById('est-sku');
+  const skus=Object.keys(saldo).filter(s=>saldo[s]>0);
+  tb1.innerHTML=skus.length?skus.map(s=>{
+    const p=produtos.find(x=>x.sku===s);
+    return `<tr><td class="code">${s}</td><td>${p?p.nome:'—'}</td><td>${p?p.cor||'—':'—'}</td><td><span class="badge bg-green">${saldo[s]} pç</span></td></tr>`;
+  }).join(''):'<tr><td colspan="4" class="empty">Vazio</td></tr>';
+
+  const tb2=document.getElementById('est-box');
+  const brows=[];
+  Object.keys(boxSaldo).forEach(b=>{Object.entries(boxSaldo[b]).filter(([,v])=>v>0).forEach(([sku,qty])=>brows.push(`<tr><td class="code">${b}</td><td class="code">${sku}</td><td><span class="badge bg-blue">${qty} pç</span></td></tr>`));});
+  tb2.innerHTML=brows.length?brows.join(''):'<tr><td colspan="3" class="empty">Vazio</td></tr>';
+
+  const tb3=document.getElementById('est-lote');
+  if(!lotes.length){tb3.innerHTML='<tr><td colspan="6" class="empty">Nenhum lote</td></tr>';return;}
+  tb3.innerHTML=lotes.map(l=>{
+    const all=Object.values(l.codigosPorProd||{}).flatMap(x=>Object.values(x).flat());
+    const inEst=all.filter(c=>pecas[c]&&pecas[c].status==='in').length;
+    const saiu=all.filter(c=>pecas[c]&&pecas[c].status==='out').length;
+    return `<tr>
+      <td class="code">${l.id}</td>
+      <td class="code">${l.dataFab||'—'}</td>
+      <td>${l.prods.map(p=>`<span class="badge bg-gray" style="margin:1px">${p.sku}</span>`).join('')}</td>
+      <td><span class="badge bg-gray">${l.totalPecas}</span></td>
+      <td><span class="badge bg-green">${inEst}</span></td>
+      <td><span class="badge bg-red">${saiu}</span></td>
+    </tr>`;
+  }).join('');
+}
+
+// ─── INIT ────────────────────────────────────────────────────
+renderPGrid();
+</script>
+</body>
+</html>
